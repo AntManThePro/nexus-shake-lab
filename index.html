@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0a0e27">
+<meta name="description" content="NEXUS Shake Lab — pick a goal, tap ingredients, blend, and save your shake formula.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<title>NEXUS // SHAKE LAB — v2.2</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{--green:#00ff87;--cyan:#60efff;--pink:#ff0080;--yellow:#ffcc00;--bg:#0a0e27;--bg3:#111840;--glass:rgba(255,255,255,0.04);--border:rgba(96,239,255,0.2)}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:#e0e8ff;font-family:'Share Tech Mono',monospace;min-height:100vh;overflow-x:hidden}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(96,239,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(96,239,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+  .scanline{position:fixed;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:0.3;animation:scan 4s linear infinite;z-index:1;pointer-events:none}
+  @keyframes scan{0%{top:-2px}100%{top:100vh}}
+  header{position:relative;z-index:10;padding:20px 30px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:rgba(10,14,39,0.9);backdrop-filter:blur(10px)}
+  .logo{font-family:'Orbitron',monospace;font-size:clamp(18px,4vw,28px);font-weight:900;background:linear-gradient(90deg,var(--green),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:4px}
+  .logo span{background:linear-gradient(90deg,var(--pink),var(--yellow));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .tagline{font-size:11px;color:var(--cyan);opacity:0.6;letter-spacing:3px;text-transform:uppercase}
+  .status-bar{display:flex;gap:15px;font-size:11px}
+  .status-dot{display:flex;align-items:center;gap:5px}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.5s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 4px var(--green)}50%{opacity:0.4;box-shadow:none}}
+  .app{position:relative;z-index:5;display:grid;grid-template-columns:1fr 320px 1fr;gap:20px;padding:20px;max-width:1400px;margin:0 auto}
+  @media(max-width:900px){.app{grid-template-columns:1fr;padding:12px}}
+  .panel{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:20px;backdrop-filter:blur(10px);position:relative;overflow:hidden}
+  .panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent)}
+  .panel-title{font-family:'Orbitron',monospace;font-size:11px;letter-spacing:4px;color:var(--cyan);text-transform:uppercase;margin-bottom:16px;opacity:0.8}
+  .ingredient-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px}
+  .ingredient-btn{background:rgba(0,255,135,0.05);border:1px solid rgba(0,255,135,0.2);border-radius:8px;padding:10px 8px;cursor:pointer;transition:all 0.2s;text-align:center;position:relative;overflow:hidden;color:#e0e8ff;font-family:'Share Tech Mono',monospace;font-size:12px}
+  .ingredient-btn:hover{border-color:var(--green);background:rgba(0,255,135,0.1);transform:translateY(-1px)}
+  .ingredient-btn.active{border-color:var(--green);background:rgba(0,255,135,0.15);box-shadow:0 0 10px rgba(0,255,135,0.3)}
+  .ingredient-btn.active::before{content:'✓';position:absolute;top:4px;right:6px;font-size:10px;color:var(--green)}
+  .ing-icon{font-size:22px;display:block;margin-bottom:4px}
+  .ing-name{font-size:11px;color:var(--cyan)}
+  .ing-macro{font-size:10px;color:rgba(255,255,255,0.4);margin-top:2px}
+  .filter-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+  .tab{padding:5px 12px;border-radius:20px;border:1px solid var(--border);font-size:11px;cursor:pointer;font-family:'Share Tech Mono',monospace;color:rgba(255,255,255,0.5);background:transparent}
+  .tab.active,.tab:hover{border-color:var(--pink);color:var(--pink);background:rgba(255,0,128,0.1)}
+  .blender-center{display:flex;flex-direction:column;gap:16px;align-items:center}
+  .blender-wrap{position:relative;width:100%;max-width:300px}
+  #blenderCanvas{width:100%;border-radius:12px;display:block}
+  .blend-controls{display:flex;gap:10px;width:100%;max-width:300px}
+  .btn{flex:1;padding:12px;border-radius:8px;border:none;cursor:pointer;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase}
+  .btn-blend{background:linear-gradient(135deg,var(--green),var(--cyan));color:var(--bg)}
+  .btn-clear{background:transparent;border:1px solid var(--pink);color:var(--pink)}
+  .macros-display{width:100%;max-width:300px;background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:14px}
+  .macros-title{font-size:10px;letter-spacing:3px;color:var(--yellow);margin-bottom:12px;text-transform:uppercase}
+  .macro-bars{display:flex;flex-direction:column;gap:8px}
+  .macro-row{display:flex;align-items:center;gap:10px}
+  .macro-label{font-size:10px;width:70px;color:rgba(255,255,255,0.6)}
+  .macro-bar-bg{flex:1;height:6px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden}
+  .macro-bar-fill{height:100%;border-radius:3px;transition:width 0.6s;width:0%}
+  .macro-val{font-size:10px;width:45px;text-align:right;color:var(--cyan)}
+  .calories-display{text-align:center;margin-top:12px;padding-top:10px;border-top:1px solid var(--border)}
+  .cal-num{font-family:'Orbitron',monospace;font-size:28px;font-weight:900;background:linear-gradient(90deg,var(--yellow),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .cal-label{font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:3px}
+  .ai-output{min-height:120px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:12px;line-height:1.7;color:var(--green);white-space:pre-wrap}
+  .ai-prompt-row{display:flex;gap:8px;margin-top:12px}
+  .ai-input{flex:1;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:#e0e8ff;font-family:'Share Tech Mono',monospace;font-size:12px;outline:none}
+  .ai-input:focus{border-color:var(--cyan)}
+  .btn-ask{padding:8px 16px;background:linear-gradient(135deg,var(--pink),var(--yellow));border:none;border-radius:6px;color:var(--bg);font-family:'Orbitron',monospace;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap}
+  .recipe-list{display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto}
+  .recipe-card{background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;padding:12px;cursor:pointer}
+  .recipe-card:hover{border-color:var(--cyan)}
+  .recipe-name{font-family:'Orbitron',monospace;font-size:12px;color:var(--cyan);margin-bottom:4px}
+  .recipe-tags{display:flex;gap:4px;flex-wrap:wrap}
+  .tag{font-size:9px;padding:2px 7px;border-radius:10px;background:rgba(255,204,0,0.1);border:1px solid rgba(255,204,0,0.3);color:var(--yellow)}
+  .blend-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,14,39,0.85);border-radius:12px;opacity:0;pointer-events:none;transition:opacity 0.3s;z-index:20}
+  .blend-overlay.active{opacity:1;pointer-events:all}
+  .blend-spinner{font-family:'Orbitron',monospace;font-size:13px;color:var(--green);text-align:center;letter-spacing:3px}
+  .intensity-row{display:flex;align-items:center;gap:12px;margin:10px 0;width:100%;max-width:300px}
+  .intensity-label{font-size:10px;color:rgba(255,255,255,0.5);white-space:nowrap}
+  input[type=range]{flex:1;-webkit-appearance:none;height:4px;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:2px;outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--cyan);cursor:pointer}
+  .intensity-val{font-size:11px;color:var(--yellow);width:30px;text-align:right}
+  .goal-select{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px}
+  .goal-btn{padding:8px 4px;border-radius:6px;border:1px solid var(--border);background:transparent;color:rgba(255,255,255,0.5);font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;text-align:center;line-height:1.4}
+  .goal-btn.active{border-color:var(--yellow);color:var(--yellow);background:rgba(255,204,0,0.1)}
+  #flavorCanvas{display:block;margin:0 auto;border-radius:50%}
+  .shake-name-display{font-family:'Orbitron',monospace;font-size:16px;font-weight:900;text-align:center;padding:12px;border-radius:8px;border:1px solid var(--border);margin-bottom:12px;min-height:48px;display:flex;align-items:center;justify-content:center;background:linear-gradient(90deg,var(--green),var(--cyan),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .generate-name-btn{width:100%;padding:10px;background:transparent;border:1px solid rgba(0,255,135,0.3);border-radius:6px;color:var(--green);font-family:'Share Tech Mono',monospace;font-size:11px;cursor:pointer;letter-spacing:2px;margin-bottom:14px}
+  .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--bg3);border:1px solid var(--green);border-radius:8px;padding:12px 24px;font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--green);z-index:100;transition:transform 0.4s;pointer-events:none}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  .howto{position:relative;z-index:5;max-width:1400px;margin:16px auto 0;padding:0 20px}
+  .howto-box{background:rgba(0,255,135,0.06);border:1px solid rgba(0,255,135,0.25);border-radius:12px;padding:14px 16px}
+  .howto-box summary{cursor:pointer;font-family:'Orbitron',monospace;font-size:11px;letter-spacing:3px;color:var(--green);list-style:none}
+  .howto-box summary::-webkit-details-marker{display:none}
+  .howto-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px;font-size:12px;line-height:1.6;color:rgba(224,232,255,0.85)}
+  .howto-steps b{display:block;color:var(--cyan);font-size:11px;letter-spacing:2px;margin-bottom:2px}
+  .howto-note{margin-top:10px;font-size:10px;color:rgba(255,255,255,0.45)}
+  .search-input{width:100%;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;padding:11px 12px;color:#e0e8ff;font-family:'Share Tech Mono',monospace;font-size:13px;outline:none;margin-bottom:10px}
+  .search-input:focus{border-color:var(--cyan)}
+  .selected-line{font-size:11px;color:var(--yellow);margin-bottom:12px}
+  .recipe-card{position:relative;padding-right:38px}
+  .recipe-del{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;border:1px solid rgba(255,0,128,0.4);background:transparent;color:var(--pink);cursor:pointer;font-size:13px;line-height:1}
+  .copy-btn{width:100%;margin-top:10px;padding:11px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--cyan);font-family:'Share Tech Mono',monospace;font-size:11px;cursor:pointer;letter-spacing:1px}
+  .sticky-bar{display:none}
+  @media(max-width:900px){
+    .app{grid-template-columns:1fr;padding:12px 12px 96px}
+    .howto{padding:0 12px}
+    .howto-steps{grid-template-columns:1fr 1fr}
+    header{position:sticky;top:0}
+    .panel{padding:16px}
+    .ingredient-btn{min-height:64px;padding:12px 8px}
+    .ing-name{font-size:12px}
+    .goal-btn{min-height:52px;padding:10px 4px;font-size:11px}
+    .tab{min-height:36px;padding:8px 14px;font-size:12px}
+    .btn,.generate-name-btn,.btn-ask{min-height:48px}
+    .ai-input{min-height:48px;font-size:14px}
+    .blender-wrap{max-width:280px}
+    #flavorCanvas{width:210px;height:210px}
+    .sticky-bar{display:flex;position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:90;background:rgba(17,24,64,0.96);border:1px solid var(--border);border-radius:14px;padding:10px;gap:10px;align-items:center;box-shadow:0 8px 30px rgba(0,0,0,0.5)}
+    .sticky-totals{flex:1;font-size:11px;line-height:1.5;color:rgba(224,232,255,0.85)}
+    .sticky-totals b{color:var(--yellow);font-size:14px}
+    .sticky-blend{flex:0 0 auto;padding:13px 18px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--green),var(--cyan));color:var(--bg);font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer}
+    .toast{bottom:calc(96px + env(safe-area-inset-bottom))}
+  }
+  @media(max-width:600px){header{padding:14px 16px 10px;padding-top:calc(14px + env(safe-area-inset-top))}.status-bar{display:none}.howto-steps{grid-template-columns:1fr}.logo{letter-spacing:2px}}
+</style>
+</head>
+<body>
+<div class="scanline"></div>
+<header>
+  <div><div class="logo">NEXUS // <span>SHAKE LAB</span></div><div class="tagline">v2.2 // LOCAL MIXOLOGIST — NO CLOUD API CALL</div></div>
+  <div class="status-bar"><div class="status-dot"><div class="dot"></div> LOCAL ENGINE</div><div class="status-dot"><div class="dot" style="background:var(--pink)"></div> LAB ACTIVE</div></div>
+</header>
+<section class="howto"><details class="howto-box" open><summary>▸ HOW TO USE — TAP TO OPEN / CLOSE</summary><div class="howto-steps"><div><b>1 · PICK A GOAL</b>Tap MUSCLE, CUT, ENERGY, RECOVER, KETO, or IMMUNE.</div><div><b>2 · TAP INGREDIENTS</b>Tap again to remove one. Pick a liquid so it blends.</div><div><b>3 · HIT BLEND</b>Watch macros update, then SAVE if you want it again.</div><div><b>4 · REUSE IT</b>Tap any saved formula to reload it, or COPY to share it.</div></div><div class="howto-note">Macros are the table values for one serving of each tapped ingredient — a starting guide, not medical advice. No account, no cloud call, your saves stay in this browser.</div></details></section>
+<div class="app">
+  <div class="panel">
+    <div class="panel-title">▸ INGREDIENT MATRIX</div>
+    <input class="search-input" id="ingredientSearch" type="search" placeholder="Search ingredients… (try: banana, whey, cacao)" oninput="searchIngredients(this.value)" aria-label="Search ingredients">
+    <div class="selected-line" id="selectedLine">0 selected — tap ingredients to build your shake.</div>
+    <div class="filter-tabs">
+      <button class="tab active" onclick="filterIngredients('all', this)">ALL</button>
+      <button class="tab" onclick="filterIngredients('protein', this)">PROTEIN</button>
+      <button class="tab" onclick="filterIngredients('fruit', this)">FRUIT</button>
+      <button class="tab" onclick="filterIngredients('liquid', this)">LIQUID</button>
+      <button class="tab" onclick="filterIngredients('boost', this)">BOOST</button>
+    </div>
+    <div class="ingredient-grid" id="ingredientGrid"></div>
+    <div class="panel-title">▸ FITNESS GOAL</div>
+    <div class="goal-select">
+      <button class="goal-btn active" data-goal="muscle" onclick="setGoal('muscle', this)">💪<br>MUSCLE</button>
+      <button class="goal-btn" data-goal="cut" onclick="setGoal('cut', this)">⚡<br>CUT</button>
+      <button class="goal-btn" data-goal="energy" onclick="setGoal('energy', this)">🔥<br>ENERGY</button>
+      <button class="goal-btn" data-goal="recover" onclick="setGoal('recover', this)">🧬<br>RECOVER</button>
+      <button class="goal-btn" data-goal="keto" onclick="setGoal('keto', this)">🥑<br>KETO</button>
+      <button class="goal-btn" data-goal="immune" onclick="setGoal('immune', this)">🛡<br>IMMUNE</button>
+    </div>
+    <div class="panel-title">▸ FLAVOR PROFILE</div>
+    <canvas id="flavorCanvas" width="240" height="240"></canvas>
+  </div>
+  <div class="blender-center">
+    <div class="shake-name-display" id="shakeName">— UNTITLED SHAKE —</div>
+    <button class="generate-name-btn" onclick="generateName()">⟳ GENERATE CODENAME</button>
+    <div class="blender-wrap">
+      <canvas id="blenderCanvas" width="300" height="420"></canvas>
+      <div class="blend-overlay" id="blendOverlay"><div class="blend-spinner" id="blendText">BLENDING...</div></div>
+    </div>
+    <div class="intensity-row"><span class="intensity-label">INTENSITY</span><input type="range" min="1" max="10" value="5" id="intensitySlider" oninput="updateIntensity(this.value)"><span class="intensity-val" id="intensityVal">5</span></div>
+    <div class="blend-controls"><button class="btn btn-blend" onclick="startBlend()">⚡ BLEND</button><button class="btn btn-clear" onclick="clearShake()">✕ CLEAR</button></div>
+    <div class="macros-display">
+      <div class="macros-title">⬡ MACROS ANALYSIS</div>
+      <div class="macro-bars">
+        <div class="macro-row"><span class="macro-label">PROTEIN</span><div class="macro-bar-bg"><div class="macro-bar-fill" id="barProtein" style="background:var(--green)"></div></div><span class="macro-val" id="valProtein">0g</span></div>
+        <div class="macro-row"><span class="macro-label">CARBS</span><div class="macro-bar-bg"><div class="macro-bar-fill" id="barCarbs" style="background:var(--cyan)"></div></div><span class="macro-val" id="valCarbs">0g</span></div>
+        <div class="macro-row"><span class="macro-label">FATS</span><div class="macro-bar-bg"><div class="macro-bar-fill" id="barFats" style="background:var(--yellow)"></div></div><span class="macro-val" id="valFats">0g</span></div>
+        <div class="macro-row"><span class="macro-label">FIBER</span><div class="macro-bar-bg"><div class="macro-bar-fill" id="barFiber" style="background:var(--pink)"></div></div><span class="macro-val" id="valFiber">0g</span></div>
+      </div>
+      <div class="calories-display"><div class="cal-num" id="calDisplay">0</div><div class="cal-label">KCAL / SERVING</div></div>
+      <button class="copy-btn" onclick="copyFormula()">⧉ COPY FORMULA</button>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div class="panel">
+      <div class="panel-title">▸ LOCAL MIXOLOGIST</div>
+      <div class="ai-output" id="aiOutput">Select ingredients, then ask me anything about your shake — optimizations, flavor pairings, or let me auto-build one for your goal. This runs on-device from the ingredient table. No API key, no cloud call.</div>
+      <div class="ai-prompt-row"><input class="ai-input" id="aiPrompt" type="text" placeholder="ask: optimize for post-workout..." onkeydown="if(event.key==='Enter')askAI()"><button class="btn-ask" onclick="askAI()">ASK</button></div>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+        <button class="tab" style="font-size:10px" onclick="quickPrompt('Optimize this for my goal')">⚡ Optimize</button>
+        <button class="tab" style="font-size:10px" onclick="quickPrompt('What flavor profile does this create?')">🎯 Flavor</button>
+        <button class="tab" style="font-size:10px" onclick="quickPrompt('Suggest 2 ingredients I should add')">➕ Suggest</button>
+        <button class="tab" style="font-size:10px" onclick="quickPrompt('Auto-build me the perfect shake for my goal')">🤖 Auto-Build</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">▸ SAVED FORMULAS</div>
+      <div class="recipe-list" id="recipeList"></div>
+      <button class="generate-name-btn" style="margin-top:10px" onclick="saveRecipe()">⊕ SAVE CURRENT FORMULA</button>
+      <div style="font-size:10px;color:rgba(255,255,255,0.4)">Custom formulas persist in this browser (localStorage). Presets always return on reload.</div>
+    </div>
+    <div class="panel"><div class="panel-title">▸ SYSTEM LOG</div><div id="sysLog" style="font-size:11px;color:rgba(255,255,255,0.4);line-height:1.8;max-height:120px;overflow-y:auto"></div></div>
+  </div>
+</div>
+<div class="sticky-bar"><div class="sticky-totals" id="stickyTotals"><b>0 kcal</b><br>0 selected</div><button class="sticky-blend" onclick="startBlend()">⚡ BLEND</button></div>
+<div class="toast" id="toast"></div>
+<script>
+const INGREDIENTS=[
+{id:'whey',name:'Whey Protein',icon:'🥛',cat:'protein',color:'#00ff87',protein:25,carbs:3,fats:1,fiber:0,kcal:120},
+{id:'casein',name:'Casein',icon:'🌙',cat:'protein',color:'#60efff',protein:24,carbs:4,fats:1,fiber:0,kcal:115},
+{id:'hemp',name:'Hemp Protein',icon:'🌿',cat:'protein',color:'#00ff87',protein:15,carbs:9,fats:3,fiber:4,kcal:120},
+{id:'egg_white',name:'Egg White',icon:'🥚',cat:'protein',color:'#ffcc00',protein:26,carbs:1,fats:0,fiber:0,kcal:110},
+{id:'banana',name:'Banana',icon:'🍌',cat:'fruit',color:'#ffcc00',protein:1,carbs:27,fats:0,fiber:3,kcal:105},
+{id:'strawberry',name:'Strawberry',icon:'🍓',cat:'fruit',color:'#ff0080',protein:1,carbs:11,fats:0,fiber:3,kcal:50},
+{id:'mango',name:'Mango',icon:'🥭',cat:'fruit',color:'#ffcc00',protein:1,carbs:25,fats:0,fiber:3,kcal:100},
+{id:'blueberry',name:'Blueberry',icon:'🫐',cat:'fruit',color:'#9b59ff',protein:1,carbs:21,fats:0,fiber:4,kcal:85},
+{id:'pineapple',name:'Pineapple',icon:'🍍',cat:'fruit',color:'#ffcc00',protein:1,carbs:22,fats:0,fiber:2,kcal:82},
+{id:'avocado',name:'Avocado',icon:'🥑',cat:'fruit',color:'#00ff87',protein:2,carbs:9,fats:15,fiber:7,kcal:160},
+{id:'almond',name:'Almond Milk',icon:'🥤',cat:'liquid',color:'#60efff',protein:1,carbs:1,fats:3,fiber:0,kcal:35},
+{id:'oat_milk',name:'Oat Milk',icon:'🌾',cat:'liquid',color:'#ffcc00',protein:2,carbs:16,fats:3,fiber:2,kcal:90},
+{id:'coconut',name:'Coconut Water',icon:'🥥',cat:'liquid',color:'#60efff',protein:2,carbs:9,fats:0,fiber:0,kcal:46},
+{id:'water',name:'Cold Water',icon:'💧',cat:'liquid',color:'#60efff',protein:0,carbs:0,fats:0,fiber:0,kcal:0},
+{id:'chia',name:'Chia Seeds',icon:'⚫',cat:'boost',color:'#60efff',protein:5,carbs:12,fats:9,fiber:10,kcal:138},
+{id:'spinach',name:'Spinach',icon:'🥬',cat:'boost',color:'#00ff87',protein:3,carbs:4,fats:0,fiber:2,kcal:23},
+{id:'ginger',name:'Ginger',icon:'🫚',cat:'boost',color:'#ffcc00',protein:0,carbs:4,fats:0,fiber:0,kcal:20},
+{id:'matcha',name:'Matcha',icon:'🍵',cat:'boost',color:'#00ff87',protein:1,carbs:4,fats:0,fiber:1,kcal:25},
+{id:'creatine',name:'Creatine',icon:'💊',cat:'boost',color:'#ff0080',protein:0,carbs:0,fats:0,fiber:0,kcal:0},
+{id:'honey',name:'Raw Honey',icon:'🍯',cat:'boost',color:'#ffcc00',protein:0,carbs:17,fats:0,fiber:0,kcal:64},
+{id:'pb',name:'Peanut Butter',icon:'🥜',cat:'boost',color:'#ffcc00',protein:8,carbs:6,fats:16,fiber:2,kcal:190},
+{id:'cacao',name:'Raw Cacao',icon:'🍫',cat:'boost',color:'#ff0080',protein:4,carbs:14,fats:5,fiber:9,kcal:115}];
+const SHAKE_NAMES=['PHANTOM FUEL','NEON GAINS','CYBER PUMP','GHOST PROTOCOL','MATRIX BLEND','VENOM SURGE','ECLIPSE MIX','HYPERDRIVE','DARK MATTER','NEURAL BOOST','CIRCUIT BREAKER','SIGNAL SURGE','NEXUS FUEL','ANTMAN SPECIAL','WRAITH FORMULA','STEALTH MODE','GRIDLOCK GRIND','QUANTUM CRUSH','APEX BLEND','OVERCLOCKED'];
+const PRESET_RECIPES=[
+{name:'MORNING LAUNCH',ingredients:['whey','banana','almond','chia','matcha'],goal:'energy'},
+{name:'POST-GRIND FUEL',ingredients:['whey','blueberry','coconut','creatine','honey'],goal:'muscle'},
+{name:'KETO DESTROYER',ingredients:['hemp','avocado','coconut','pb','spinach'],goal:'keto'},
+{name:'NIGHT PROTOCOL',ingredients:['casein','strawberry','almond','chia'],goal:'recover'}];
+const GOAL_BUILDS={muscle:['whey','banana','almond','pb','creatine'],cut:['whey','strawberry','almond','spinach','chia'],energy:['whey','banana','almond','matcha','honey'],recover:['casein','strawberry','almond','chia'],keto:['hemp','avocado','coconut','pb','spinach'],immune:['hemp','blueberry','coconut','ginger','spinach']};
+let selected=new Set(),currentGoal='muscle',currentFilter='all',searchQuery='',isBlending=false,savedRecipes=[...PRESET_RECIPES],particles=[],liquidLevel=0,liquidTarget=0,intensity=5,animFrame;
+const byId=id=>document.getElementById(id);
+const ingById=id=>INGREDIENTS.find(i=>i.id===id);
+function totals(){let p=0,c=0,f=0,fb=0,kcal=0;selected.forEach(id=>{const ing=ingById(id);if(!ing)return;p+=ing.protein;c+=ing.carbs;f+=ing.fats;fb+=ing.fiber;kcal+=ing.kcal});return{p,c,f,fb,kcal}}
+function loadSaved(){try{const raw=localStorage.getItem('nexus-shake-lab-recipes');if(!raw)return;const parsed=JSON.parse(raw);if(Array.isArray(parsed)){const valid=parsed.filter(r=>r&&r.name&&Array.isArray(r.ingredients)&&r.ingredients.every(id=>ingById(id)));savedRecipes=[...PRESET_RECIPES,...valid]}}catch(e){}}
+function persistSaved(){try{const custom=savedRecipes.filter(r=>!PRESET_RECIPES.some(p=>p.name===r.name));localStorage.setItem('nexus-shake-lab-recipes',JSON.stringify(custom))}catch(e){}}
+const canvas=byId('blenderCanvas'),ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height;
+class Particle{constructor(x,y,color){this.x=x;this.y=y;this.vx=(Math.random()-0.5)*3;this.vy=(Math.random()-0.5)*3;this.r=Math.random()*4+2;this.color=color;this.alpha=1;this.life=Math.random()*60+40;this.maxLife=this.life}
+update(blend){if(blend){this.vx+=(Math.random()-0.5)*intensity*0.5;this.vy+=(Math.random()-0.5)*intensity*0.5}this.vx*=0.96;this.vy*=0.96;this.vy+=0.05;this.x+=this.vx;this.y+=this.vy;this.life--;this.alpha=this.life/this.maxLife}
+draw(){ctx.save();ctx.globalAlpha=this.alpha*0.8;ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.fillStyle=this.color;ctx.shadowBlur=8;ctx.shadowColor=this.color;ctx.fill();ctx.restore()}}
+function getLiquidColor(){const first=[...selected][0];const ing=first?ingById(first):null;return ing?ing.color:'#1a2a3a'}
+function drawBlender(){
+ctx.clearRect(0,0,W,H);const bx=50,by=60,bw=W-100,bh=H-120;
+ctx.save();ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx+bw,by);ctx.lineTo(bx+bw-20,by+bh);ctx.lineTo(bx+20,by+bh);ctx.closePath();ctx.fillStyle='rgba(10,14,39,0.8)';ctx.fill();ctx.strokeStyle=isBlending?'rgba(0,255,135,0.7)':'rgba(96,239,255,0.3)';ctx.lineWidth=1.5;ctx.stroke();ctx.restore();
+liquidTarget=selected.size>0?Math.min(0.85,0.15+selected.size*0.1):0;liquidLevel+=(liquidTarget-liquidLevel)*0.03;
+if(liquidLevel>0.01){const liquidTop=by+bh*(1-liquidLevel);ctx.save();ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(bx+bw,by);ctx.lineTo(bx+bw-20,by+bh);ctx.lineTo(bx+20,by+bh);ctx.closePath();ctx.clip();const waveAmp=isBlending?intensity*2:3,waveSpeed=isBlending?Date.now()*0.008:Date.now()*0.002;ctx.beginPath();ctx.moveTo(bx,H);for(let x=bx;x<=bx+bw;x+=5){const t=(x-bx)/bw;const wave=Math.sin(t*Math.PI*4+waveSpeed)*waveAmp+Math.sin(t*Math.PI*2-waveSpeed*1.3)*waveAmp*0.5;ctx.lineTo(x,liquidTop+wave)}ctx.lineTo(bx+bw,H);ctx.closePath();const grad=ctx.createLinearGradient(0,liquidTop,0,by+bh);const c1=getLiquidColor();grad.addColorStop(0,c1+'cc');grad.addColorStop(1,c1+'55');ctx.fillStyle=grad;ctx.fill();if(isBlending&&Math.random()<0.4){particles.push(new Particle(bx+20+Math.random()*(bw-40),liquidTop+20+Math.random()*(bh-40)*liquidLevel,c1))}ctx.restore()}
+particles=particles.filter(p=>p.life>0);particles.forEach(p=>{p.update(isBlending);p.draw()});
+ctx.save();ctx.beginPath();ctx.rect(bx-5,by-25,bw+10,22);ctx.fillStyle='rgba(10,14,39,0.9)';ctx.fill();ctx.strokeStyle='rgba(96,239,255,0.3)';ctx.lineWidth=1;ctx.stroke();ctx.restore();
+ctx.save();ctx.font='700 10px Orbitron, monospace';ctx.fillStyle='#60efff';ctx.textAlign='center';ctx.fillText('NEXUS // SHAKE LAB',W/2,by-9);ctx.restore();
+ctx.save();ctx.beginPath();ctx.rect(bx+10,by+bh,bw-20,30);ctx.fillStyle='rgba(10,14,39,0.9)';ctx.fill();ctx.strokeStyle='rgba(96,239,255,0.3)';ctx.lineWidth=1;ctx.stroke();ctx.restore();
+if(selected.size>0&&liquidLevel>0.1){const liquidTop=by+bh*(1-liquidLevel);[...selected].forEach((id,i)=>{const ing=ingById(id);if(!ing)return;const t=Date.now()*0.001;const floatX=bx+30+((i*73)%(bw-60));const floatY=liquidTop+15+Math.sin(t+i*1.2)*8;if(floatY>by+bh-20||floatY<liquidTop)return;ctx.save();ctx.globalAlpha=isBlending?0.3+Math.random()*0.3:0.7;ctx.font='18px serif';ctx.textAlign='center';ctx.fillText(ing.icon,floatX,floatY);ctx.restore()})}
+if(selected.size===0){ctx.save();ctx.globalAlpha=0.3;ctx.font='13px Share Tech Mono, monospace';ctx.fillStyle='#60efff';ctx.textAlign='center';ctx.fillText('SELECT INGREDIENTS',W/2,H/2-10);ctx.fillText('TO BEGIN',W/2,H/2+10);ctx.restore()}
+animFrame=requestAnimationFrame(drawBlender)}
+const fCanvas=byId('flavorCanvas'),fCtx=fCanvas.getContext('2d');
+function drawFlavorWheel(){
+const cx=fCanvas.width/2,cy=fCanvas.height/2,r=80;fCtx.clearRect(0,0,fCanvas.width,fCanvas.height);
+const axes=[{label:'SWEET',color:'#ffcc00'},{label:'BITTER',color:'#ff0080'},{label:'SOUR',color:'#60efff'},{label:'RICH',color:'#9b59ff'},{label:'EARTHY',color:'#00ff87'},{label:'SPICY',color:'#ff6600'}];
+const flavors=[0,0,0,0,0,0];selected.forEach(id=>{const ing=ingById(id);if(!ing)return;if(ing.cat==='fruit'){flavors[0]+=0.3;flavors[2]+=0.15}if(ing.cat==='protein'){flavors[3]+=0.2;flavors[1]+=0.1}if(ing.cat==='liquid'){flavors[2]+=0.1}if(ing.cat==='boost'){flavors[4]+=0.2;flavors[5]+=0.1}if(id==='honey')flavors[0]+=0.4;if(id==='cacao')flavors[1]+=0.4;if(id==='ginger')flavors[5]+=0.5;if(id==='matcha'){flavors[4]+=0.3;flavors[1]+=0.2}if(id==='pb')flavors[3]+=0.4;if(id==='blueberry')flavors[2]+=0.2});
+const maxF=Math.max(...flavors,0.1),norm=flavors.map(v=>Math.min(v/maxF,1));
+fCtx.beginPath();fCtx.arc(cx,cy,r+8,0,Math.PI*2);fCtx.fillStyle='rgba(0,0,0,0.4)';fCtx.fill();
+[0.25,0.5,0.75,1].forEach(scale=>{fCtx.beginPath();axes.forEach((ax,i)=>{const a=(i/axes.length)*Math.PI*2-Math.PI/2;const x=cx+Math.cos(a)*r*scale,y=cy+Math.sin(a)*r*scale;i===0?fCtx.moveTo(x,y):fCtx.lineTo(x,y)});fCtx.closePath();fCtx.strokeStyle='rgba(96,239,255,0.1)';fCtx.lineWidth=1;fCtx.stroke()});
+axes.forEach((ax,i)=>{const a=(i/axes.length)*Math.PI*2-Math.PI/2;fCtx.beginPath();fCtx.moveTo(cx,cy);fCtx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);fCtx.strokeStyle='rgba(96,239,255,0.15)';fCtx.lineWidth=1;fCtx.stroke()});
+if(selected.size>0){fCtx.beginPath();axes.forEach((ax,i)=>{const a=(i/axes.length)*Math.PI*2-Math.PI/2;const v=norm[i]*r*0.9+5;const x=cx+Math.cos(a)*v,y=cy+Math.sin(a)*v;i===0?fCtx.moveTo(x,y):fCtx.lineTo(x,y)});fCtx.closePath();const grad=fCtx.createRadialGradient(cx,cy,0,cx,cy,r);grad.addColorStop(0,'rgba(0,255,135,0.5)');grad.addColorStop(1,'rgba(96,239,255,0.1)');fCtx.fillStyle=grad;fCtx.fill();fCtx.strokeStyle='#00ff87';fCtx.lineWidth=1.5;fCtx.stroke()}
+axes.forEach((ax,i)=>{const a=(i/axes.length)*Math.PI*2-Math.PI/2;const lx=cx+Math.cos(a)*(r+20),ly=cy+Math.sin(a)*(r+20);fCtx.font='9px Share Tech Mono';fCtx.fillStyle=ax.color;fCtx.textAlign='center';fCtx.textBaseline='middle';fCtx.fillText(ax.label,lx,ly)})}
+function renderIngredients(){const grid=byId('ingredientGrid');let filtered=currentFilter==='all'?INGREDIENTS:INGREDIENTS.filter(i=>i.cat===currentFilter);if(searchQuery)filtered=filtered.filter(i=>i.name.toLowerCase().includes(searchQuery));grid.innerHTML=filtered.length?filtered.map(ing=>`<button class="ingredient-btn ${selected.has(ing.id)?'active':''}" onclick="toggleIngredient('${ing.id}')" aria-pressed="${selected.has(ing.id)}"><span class="ing-icon">${ing.icon}</span><div class="ing-name">${ing.name}</div><div class="ing-macro">${ing.protein}p · ${ing.carbs}c · ${ing.fats}f</div></button>`).join(''):'<div style="font-size:12px;color:rgba(255,255,255,0.5);grid-column:1/-1">No match — try another word, or clear the search.</div>'}
+function searchIngredients(v){searchQuery=v.trim().toLowerCase();renderIngredients()}
+function filterIngredients(cat,btn){currentFilter=cat;document.querySelectorAll('.filter-tabs .tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');renderIngredients()}
+function toggleIngredient(id){const was=selected.has(id);if(was)selected.delete(id);else selected.add(id);renderIngredients();updateMacros();drawFlavorWheel();sysLog(`> ${was?'REMOVED':'ADDED'}: ${ingById(id)?.name}`)}
+function updateMacros(){const t=totals();const maxAll=Math.max(t.p,t.c,t.f,t.fb,50);const set=(bar,valEl,val)=>{byId(bar).style.width=Math.min(val/maxAll*100,100)+'%';byId(valEl).textContent=val+'g'};set('barProtein','valProtein',t.p);set('barCarbs','valCarbs',t.c);set('barFats','valFats',t.f);set('barFiber','valFiber',t.fb);byId('calDisplay').textContent=t.kcal;byId('selectedLine').textContent=selected.size===0?'0 selected — tap ingredients to build your shake.':selected.size+' selected: '+[...selected].map(id=>ingById(id)?.name).join(', ');byId('stickyTotals').innerHTML='<b>'+t.kcal+' kcal</b><br>'+selected.size+' selected · '+t.p+'g protein'}
+function formulaText(){const t=totals();const name=byId('shakeName').textContent;return (name+' — NEXUS SHAKE LAB\nIngredients: '+([...selected].map(id=>ingById(id)?.name).join(', ')||'none')+'\nMacros: '+t.p+'g protein, '+t.c+'g carbs, '+t.f+'g fats, '+t.fb+'g fiber, '+t.kcal+' kcal')}
+async function copyFormula(){if(selected.size===0){showToast('SELECT INGREDIENTS FIRST');return}try{await navigator.clipboard.writeText(formulaText());showToast('FORMULA COPIED')}catch(e){const ta=document.createElement('textarea');ta.value=formulaText();document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();showToast('FORMULA COPIED')}}
+function startBlend(){if(selected.size===0){showToast('SELECT INGREDIENTS FIRST');return}if(isBlending)return;isBlending=true;const overlay=byId('blendOverlay'),blendText=byId('blendText');overlay.classList.add('active');const msgs=['INITIALIZING...','ANALYZING MACROS...','BLENDING...','EMULSIFYING...','OPTIMIZING...','COMPLETE ✓'];let i=0;const tick=setInterval(()=>{blendText.innerHTML=msgs[i]+'<br><br>'+'█'.repeat(i+1);i++;if(i>=msgs.length){clearInterval(tick);setTimeout(()=>{overlay.classList.remove('active');isBlending=false;showToast('BLEND COMPLETE // FORMULA READY');generateName();sysLog('> BLEND COMPLETE: '+selected.size+' ingredients processed')},500)}},350);sysLog('> BLEND INITIATED @ INTENSITY '+intensity);for(let j=0;j<20;j++){particles.push(new Particle(80+Math.random()*140,150+Math.random()*200,getLiquidColor()))}}
+function clearShake(){selected.clear();renderIngredients();updateMacros();drawFlavorWheel();particles=[];liquidLevel=0;byId('shakeName').textContent='— UNTITLED SHAKE —';sysLog('> FORMULA CLEARED')}
+function flavorSummary(){if(selected.size===0)return 'No flavor profile yet — pick ingredients first.';const names=[...selected].map(id=>ingById(id)?.name).join(', ');return 'Flavor drivers: '+names+'. Sweet comes mainly from fruit and honey, bitter from cacao and matcha, rich from peanut butter and avocado, spicy from ginger.'}
+function goalAdvice(){const t=totals();const tips=[];if(currentGoal==='muscle'&&t.p<25)tips.push('Protein is under 25g for a muscle goal — add whey, egg white, or peanut butter.');if(currentGoal==='keto'&&t.c>15)tips.push('Carbs are '+t.c+'g, high for keto — drop banana, mango, oat milk, or honey.');if(currentGoal==='cut'&&t.kcal>300)tips.push('Calories are '+t.kcal+' — swap peanut butter or avocado out, or use water/almond milk.');if(currentGoal==='recover'&&![...selected].includes('casein'))tips.push('For recovery, casein is the slow-release pick in this matrix.');if(![...selected].some(id=>ingById(id)?.cat==='liquid'))tips.push('No liquid selected yet — almond milk, coconut water, or cold water is needed to blend.');if(tips.length===0)tips.push('This lines up with your '+currentGoal.toUpperCase()+' goal on the numbers in this matrix.');return tips.join(' ')}
+function askAI(){const input=byId('aiPrompt');const prompt=input.value.trim();if(!prompt)return;input.value='';const out=byId('aiOutput');const t=totals();const ingList=[...selected].map(id=>ingById(id)?.name).join(', ')||'none selected';
+if(/auto-build|auto build/i.test(prompt)){const build=GOAL_BUILDS[currentGoal]||GOAL_BUILDS.muscle;selected=new Set(build);renderIngredients();updateMacros();drawFlavorWheel();out.textContent='AUTO-BUILD FOR '+currentGoal.toUpperCase()+':\n'+build.map(id=>ingById(id)?.name).join(' + ')+'\n\nLoaded into the blender. Hit BLEND, then SAVE if you want to keep it.';sysLog('> LOCAL AUTO-BUILD: '+currentGoal.toUpperCase());return}
+if(/suggest/i.test(prompt)){const missing=INGREDIENTS.filter(i=>!selected.has(i.id));const picks=currentGoal==='muscle'?missing.filter(i=>['whey','creatine','pb'].includes(i.id)):currentGoal==='keto'?missing.filter(i=>['avocado','pb'].includes(i.id)):missing.slice(0,2);out.textContent='SUGGESTIONS:\n'+(picks.length?picks.map(i=>i.icon+' '+i.name+' — '+i.protein+'p / '+i.carbs+'c / '+i.fats+'f, '+i.kcal+' kcal').join('\n'):'Nothing left to suggest — you already picked the whole matrix.')+'\n\n'+goalAdvice();return}
+if(/flavor/i.test(prompt)){out.textContent=flavorSummary()+'\n\nCurrent: '+t.p+'g protein, '+t.c+'g carbs, '+t.f+'g fats, '+t.fb+'g fiber, '+t.kcal+' kcal.';return}
+out.textContent='LOCAL MIXOLOGIST — '+currentGoal.toUpperCase()+'\nIngredients: '+ingList+'\nTotals: '+t.p+'g protein, '+t.c+'g carbs, '+t.f+'g fats, '+t.fb+'g fiber, '+t.kcal+' kcal.\n\n'+goalAdvice()+'\n\nNote: this answer is computed from the ingredient table in this file, not a cloud model.';sysLog('> LOCAL MIXOLOGIST RESPONSE')}
+function quickPrompt(text){byId('aiPrompt').value=text;askAI()}
+function renderRecipes(){byId('recipeList').innerHTML=savedRecipes.map((r,i)=>{const isPreset=PRESET_RECIPES.some(p=>p.name===r.name);return `<div class="recipe-card" onclick="loadRecipe(${i})"><div class="recipe-name">${r.name}</div><div class="recipe-tags">${r.ingredients.slice(0,3).map(id=>{const ing=ingById(id);return ing?`<span class="tag">${ing.icon} ${ing.name}</span>`:''}).join('')}${r.ingredients.length>3?`<span class="tag">+${r.ingredients.length-3}</span>`:''}</div>${isPreset?'':`<button class="recipe-del" title="Delete saved formula" aria-label="Delete ${r.name}" onclick="event.stopPropagation();deleteRecipe(${i})">✕</button>`}</div>`}).join('')}
+function deleteRecipe(idx){const r=savedRecipes[idx];if(!r||PRESET_RECIPES.some(p=>p.name===r.name))return;savedRecipes.splice(idx,1);persistSaved();renderRecipes();showToast('DELETED: '+r.name);sysLog('> DELETED: '+r.name)}
+function loadRecipe(idx){const r=savedRecipes[idx];if(!r)return;selected=new Set(r.ingredients);currentGoal=r.goal;document.querySelectorAll('.goal-btn').forEach(b=>b.classList.toggle('active',b.dataset.goal===r.goal));byId('shakeName').textContent=r.name;renderIngredients();updateMacros();drawFlavorWheel();showToast('FORMULA LOADED: '+r.name);sysLog('> RECIPE LOADED: '+r.name)}
+function saveRecipe(){if(selected.size===0){showToast('NO INGREDIENTS TO SAVE');return}const raw=byId('shakeName').textContent.replace(/^—\s*/,'').replace(/\s*—$/,'');const name=raw==='UNTITLED SHAKE'?'CUSTOM FORMULA '+new Date().toLocaleTimeString('en-US',{hour12:false}):raw;savedRecipes.unshift({name,ingredients:[...selected],goal:currentGoal});persistSaved();renderRecipes();showToast('FORMULA SAVED: '+name);sysLog('> SAVED: '+name)}
+function generateName(){const n=SHAKE_NAMES[Math.floor(Math.random()*SHAKE_NAMES.length)];byId('shakeName').textContent=n}
+function setGoal(goal,btn){currentGoal=goal;document.querySelectorAll('.goal-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');sysLog('> GOAL SET: '+goal.toUpperCase())}
+function updateIntensity(val){intensity=parseInt(val,10);byId('intensityVal').textContent=val}
+const logLines=[];function sysLog(msg){const ts=new Date().toLocaleTimeString('en-US',{hour12:false});logLines.unshift(`<span style="color:var(--cyan);opacity:0.5;">[${ts}]</span> ${msg}`);while(logLines.length>15)logLines.pop();byId('sysLog').innerHTML=logLines.join('<br>')}
+function showToast(msg){const t=byId('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800)}
+loadSaved();renderIngredients();updateMacros();renderRecipes();drawBlender();drawFlavorWheel();sysLog('> NEXUS SHAKE LAB v2.2 INITIALIZED');sysLog('> LOCAL MIXOLOGIST: ON-DEVICE, NO API CALL');sysLog('> INGREDIENT MATRIX: '+INGREDIENTS.length+' ITEMS LOADED');
+</script>
+</body>
+</html>
