@@ -8,6 +8,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="icon" href="icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/favicon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/favicon-512.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="manifest" href="manifest.json">
 <title>NEXUS // SHAKE LAB — v2.2</title>
@@ -292,6 +295,18 @@ function setGoal(goal,btn){currentGoal=goal;document.querySelectorAll('.goal-btn
 function updateIntensity(val){intensity=parseInt(val,10);byId('intensityVal').textContent=val}
 const logLines=[];function sysLog(msg){const ts=new Date().toLocaleTimeString('en-US',{hour12:false});logLines.unshift(`<span style="color:var(--cyan);opacity:0.5;">[${ts}]</span> ${msg}`);while(logLines.length>15)logLines.pop();byId('sysLog').innerHTML=logLines.join('<br>')}
 function showToast(msg){const t=byId('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800)}
+// EASTER EGG: tap the blender cup 3 times fast and DoubleA's secret ingredient shows up. Toast + log only, recipe untouched.
+let eggTaps = 0, eggTimer = null;
+canvas.addEventListener('click', () => {
+  eggTaps++;
+  clearTimeout(eggTimer);
+  eggTimer = setTimeout(() => { eggTaps = 0; }, 1500);
+  if (eggTaps >= 3) {
+    eggTaps = 0;
+    showToast('DOUBLEA SECRET INGREDIENT: PEANUT BUTTER. ALWAYS.');
+    sysLog('> FINE PRINT: there is no secret ingredient. AntMan just puts peanut butter in everything and calls it a recipe. Not perfect, just real.');
+  }
+});
 loadSaved();renderIngredients();updateMacros();renderRecipes();drawBlender();drawFlavorWheel();sysLog('> NEXUS SHAKE LAB v2.2 INITIALIZED');sysLog('> LOCAL MIXOLOGIST: ON-DEVICE, NO API CALL');sysLog('> INGREDIENT MATRIX: '+INGREDIENTS.length+' ITEMS LOADED');
 </script>
 </body>
